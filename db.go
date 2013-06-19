@@ -1,4 +1,4 @@
-package db
+package mgorx
 
 import (
   "github.com/robfig/revel"

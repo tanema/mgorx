@@ -51,8 +51,14 @@ func (doc *Document) Save() bool {
   return err == nil
 }
 
-func (doc *Document) Update(changes interface{}) bool {
+func (doc *Document) Update(changes interface{}, v *revel.Validation) bool {
   collection_name := collection_name_from(doc.D)
+
+  doc.Validate(v)
+  if v.HasErrors() {
+    return false
+  }
+
   err := with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
       err = c.UpdateId(doc.Id(), changes)

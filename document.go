@@ -68,6 +68,11 @@ func (doc *Document) Update(changes interface{}, v *revel.Validation) bool {
     doc.LastError = err
     return
   })
+
+  if err == nil {
+    return doc.Save()
+  }
+
   return err == nil
 }
 

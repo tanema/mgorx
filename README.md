@@ -87,3 +87,19 @@ func (c UsersController) Delete(id string) revel.Result {
 ```
 
 woo I think that is a bit more sane
+
+Last you can do other stuff cool like this
+
+```go
+func (c App) Index() revel.Result {
+  users := []models.User{}
+  models.Users().All(&users, bson.M{"order": "-_id"})
+  count, _ := models.Users().Count(nil)
+  return c.Render(users, count)
+}
+```
+
+It provides methods such as Collection.Where(result, query, options) and Collection.All(result, options), Collection.Count(query)
+
+All the queries can be done using mgo.bson.M{} and same with the options
+

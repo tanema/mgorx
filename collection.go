@@ -86,6 +86,16 @@ func (c *Collection) All(result interface{}, options map[string]interface{}) err
   return c.Where(result, nil, options)
 }
 
+func (col *Collection) Count(q interface{}) (int, error) {
+  count := 0
+  err := with_collection(col.collection_name, func(c *mgo.Collection) (err error) {
+    count, err = c.Find(q).Count()
+    return
+  })
+
+  return count, err
+}
+
 func (col *Collection) Delete(q interface{}) error {
   return with_collection(col.collection_name, func(c *mgo.Collection) error {
     return c.Remove(q)

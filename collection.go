@@ -59,14 +59,17 @@ func (col *Collection) Find(result, q interface{}) error {
   return err
 }
 
-func (col *Collection) Where(results, q interface{}, options map[string]int) error {
+func (col *Collection) Where(results, q interface{}, options map[string]interface{}) error {
   err := with_collection(col.collection_name, func(c *mgo.Collection) error {
     fn := c.Find(q)
     if skip, ok := options["skip"]; ok {
-      fn = fn.Skip(skip)
+      fn = fn.Skip(int(reflect.ValueOf(skip).Int()))
     }
     if limit, ok := options["limit"]; ok {
-      fn = fn.Limit(limit)
+      fn = fn.Limit(int(reflect.ValueOf(limit).Int()))
+    }
+    if sort, ok := options["order"]; ok {
+      fn = fn.Sort(reflect.ValueOf(sort).String())
     }
     return fn.All(results)
   })
@@ -79,7 +82,7 @@ func (col *Collection) Where(results, q interface{}, options map[string]int) err
   return err
 }
 
-func (c *Collection) All(result interface{}, options map[string]int) error {
+func (c *Collection) All(result interface{}, options map[string]interface{}) error {
   return c.Where(result, nil, options)
 }
 

@@ -41,7 +41,7 @@ func (doc *Document) Save() bool {
   collection_name := collection_name_from(doc.D)
   err :=  with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
-      err = c.UpdateId(doc.Id(), doc.D)
+      err = c.Update(bson.M{"_id": bson.ObjectId(doc.Id())}, doc.D)
     }else{
       err = c.Insert(doc.D)
     }
@@ -61,7 +61,7 @@ func (doc *Document) Update(changes interface{}, v *revel.Validation) bool {
 
   err := with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
-      err = c.UpdateId(doc.Id(), changes)
+      err = c.Update(bson.M{"_id": bson.ObjectId(doc.Id())}, changes)
     }else{
       err = errors.New("Document is not persisted, Please use Save instead of Update")
     }
@@ -80,7 +80,7 @@ func (doc *Document) Delete() bool {
   collection_name := collection_name_from(doc.D)
   err := with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
-      err = c.RemoveId(doc.Id())
+      err = c.RemoveId(bson.ObjectId(doc.Id()))
     }
     doc.LastError = err
     return

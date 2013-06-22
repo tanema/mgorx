@@ -98,7 +98,11 @@ func (col *Collection) Count(q interface{}) (int, error) {
 
 func (col *Collection) Delete(q interface{}) error {
   return with_collection(col.collection_name, func(c *mgo.Collection) error {
-    return c.Remove(q)
+    if query_type := reflect.TypeOf(q).Kind().String(); query_type == "string" {
+      return c.RemoveId(bson.M{"_id": bson.ObjectIdHex(reflect.ValueOf(q).String())})
+    }else{ // find one with the query
+      return c.Remove(q)
+    }
   })
 }
 

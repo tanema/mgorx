@@ -49,7 +49,6 @@ func (doc *Document) Update(changes interface{}, v *revel.Validation) bool {
 
 func (doc *Document) Delete() bool {
   doc.BeforeDestroy()
-  collection_name := collection_name_from(doc.D)
   err := with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
       err = c.RemoveId(doc.Id())

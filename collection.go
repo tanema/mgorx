@@ -55,14 +55,17 @@ func (col *Collection) Find(result, q interface{}) error {
   return err
 }
 
-func (col *Collection) Where(results, q interface{}, options map[string]int) error {
+func (col *Collection) Where(results, q interface{}, options map[string]interface{}) error {
   err := with_collection(col.collection_name, func(c *mgo.Collection) error {
     fn := c.Find(q)
     if skip, ok := options["skip"]; ok {
-      fn = fn.Skip(skip)
+      fn = fn.Skip(int(reflect.ValueOf(skip).Int()))
     }
     if limit, ok := options["limit"]; ok {
-      fn = fn.Limit(limit)
+      fn = fn.Limit(int(reflect.ValueOf(limit).Int()))
+    }
+    if sort, ok := options["order"]; ok {
+      fn = fn.Sort(reflect.ValueOf(sort).String())
     }
     return fn.All(results)
   })
@@ -75,13 +78,27 @@ func (col *Collection) Where(results, q interface{}, options map[string]int) err
   return err
 }
 
-func (c *Collection) All(result interface{}, options map[string]int) error {
+func (c *Collection) All(result interface{}, options map[string]interface{}) error {
   return c.Where(result, nil, options)
+}
+
+func (col *Collection) Count(q interface{}) (int, error) {
+  count := 0
+  err := with_collection(col.collection_name, func(c *mgo.Collection) (err error) {
+    count, err = c.Find(q).Count()
+    return
+  })
+
+  return count, err
 }
 
 func (col *Collection) Delete(q interface{}) error {
   return with_collection(col.collection_name, func(c *mgo.Collection) error {
-    return c.Remove(q)
+    if query_type := reflect.TypeOf(q).Kind().String(); query_type == "string" {
+      return c.RemoveId(bson.M{"_id": bson.ObjectIdHex(reflect.ValueOf(q).String())})
+    }else{ // find one with the query
+      return c.Remove(q)
+    }
   })
 }
 

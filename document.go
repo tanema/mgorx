@@ -4,8 +4,8 @@ import (
   "github.com/robfig/revel"
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
-  "errors"
   "reflect"
+  "fmt"
 )
 
 type Document struct {
@@ -48,7 +48,8 @@ func (doc *Document) Update(changes interface{}, v *revel.Validation) bool {
 }
 
 func (doc *Document) Delete() bool {
-  doc.BeforeDestroy()
+  doc.callCB("BeforeDestroy")
+  collection_name := collection_name_from(doc.D)
   err := with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
       err = c.RemoveId(doc.Id())
@@ -56,32 +57,32 @@ func (doc *Document) Delete() bool {
     doc.LastError = err
     return
   })
-  doc.AfterDestroy()
+  doc.callCB("AfterDestroy")
   return err == nil
 }
 
 func (doc *Document) saveChain(v *revel.Validation) bool {
   if v != nil {
-    doc.BeforeValidation()
+    doc.callCB("BeforeValidation")
     doc.Validate(v)
     if v.HasErrors() {
       return false
     }
-    doc.AfterValidation()
+    doc.callCB("AfterValidation")
   }
-  doc.BeforeSave()
+  doc.callCB("BeforeSave")
   if doc.IsNew() {
-    doc.BeforeCreate()
+    doc.callCB("BeforeCreate")
   }else{
-    doc.BeforeUpdate()
+    doc.callCB("BeforeUpdate")
   }
   saved := doc.save()
   if doc.IsNew() {
-    doc.AfterCreate()
+    doc.callCB("AfterCreate")
   }else{
-    doc.AfterUpdate()
+    doc.callCB("AfterUpdate")
   }
-  doc.AfterSave()
+  doc.callCB("AfterSave")
 
   return saved
 }
@@ -91,9 +92,9 @@ func (doc *Document) save() bool {
   err :=  with_collection(collection_name, func(c *mgo.Collection) (err error) {
     if doc.IsPersisted() {
       if doc.changes != nil {
-        err = c.UpdateId(doc.Id(), doc.changes)
+        err = c.Update(bson.M{"_id": bson.ObjectId(doc.Id())}, doc.changes)
       }else{
-        err = c.UpdateId(doc.Id(), doc.D)
+        err = c.Update(bson.M{"_id": bson.ObjectId(doc.Id())}, doc.D)
       }
     }else{
       err = c.Insert(doc.D)
@@ -105,13 +106,16 @@ func (doc *Document) save() bool {
 }
 
 //callbacks
-func (doc *Document) BeforeValidation() bool {}
-func (doc *Document) AfterValidation() bool {}
-func (doc *Document) BeforeSave() bool {}
-func (doc *Document) BeforeCreate() bool {}
-func (doc *Document) BeforeUpdate() bool {}
-func (doc *Document) AfterUpdate() bool {}
-func (doc *Document) AfterCreate() bool {}
-func (doc *Document) AfterSave() bool {}
-func (doc *Document) BeforeDestroy() bool {}
-func (doc *Document) AfterDestroy() bool {}
+func (doc *Document) callCB(name string) {
+  reflect.ValueOf(doc.D).MethodByName(name).Call([]reflect.Value{})
+}
+func (doc *Document) BeforeValidation() {}
+func (doc *Document) AfterValidation() {}
+func (doc *Document) BeforeSave() {}
+func (doc *Document) BeforeCreate() {}
+func (doc *Document) BeforeUpdate() {}
+func (doc *Document) AfterUpdate() {}
+func (doc *Document) AfterCreate() {}
+func (doc *Document) AfterSave() {}
+func (doc *Document) BeforeDestroy() {}
+func (doc *Document) AfterDestroy() {}

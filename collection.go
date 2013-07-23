@@ -39,11 +39,7 @@ func (c *Collection) New(new_obj interface{}) Document {
 
 func (c *Collection) Create(new_obj interface{}, v *revel.Validation) bool {
   doc := c.New(new_obj)
-  doc.Validate(v)
-  if v.HasErrors() {
-    return false
-  }
-  return doc.Save()
+  return doc.saveChain(v)
 }
 
 func (col *Collection) Find(result, q interface{}) error {
